@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI News Report</title>
+  <link rel="stylesheet" href="ai-news.css">
+</head>
+<body>
+  <div class="news-app">
+    <header class="news-header">
+      <div class="news-header-top">
+        <a href="index.html" class="back-link">← 메뉴로 돌아가기</a>
+      </div>
+      <h1>📰 AI News Report</h1>
+      <p class="news-tagline">키워드를 입력하면 최근 3일간의 주요 뉴스를 수집해 보고서를 생성합니다</p>
+    </header>
+
+    <section class="search-panel">
+      <form id="search-form" class="search-form">
+        <div class="search-input-wrap">
+          <label for="keyword-input" class="sr-only">키워드</label>
+          <input
+            id="keyword-input"
+            type="text"
+            placeholder="예: ChatGPT, 반도체, 자율주행..."
+            autocomplete="off"
+            required
+          >
+        </div>
+        <button type="submit" class="btn btn-generate" id="generate-btn">보고서 생성</button>
+      </form>
+      <p class="search-hint">Gemini API + Google 검색으로 최근 3일 뉴스 보고서를 생성합니다 (Vercel 배포 필요)</p>
+    </section>
+
+    <div id="empty-state" class="empty-state">
+      <p>키워드를 입력하고 <strong>보고서 생성</strong> 버튼을 눌러주세요.</p>
+    </div>
+
+    <div id="loading" class="state-panel loading">
+      <div class="spinner"></div>
+      <p id="loading-text">뉴스를 수집하고 보고서를 작성하는 중...</p>
+    </div>
+
+    <div id="error" class="state-panel error">
+      <p id="error-text">보고서를 생성하지 못했습니다.</p>
+      <button id="retry-btn" class="btn" type="button">다시 시도</button>
+    </div>
+
+    <article id="report" class="report"></article>
+
+    <footer class="news-footer">
+      <p>데이터 출처: Google 검색 (Gemini API)</p>
+    </footer>
+  </div>
+
+  <script src="ai-news.js"></script>
+</body>
+</html>

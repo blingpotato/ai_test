@@ -1,0 +1,7 @@
+{
+  "name": "ai-education-practice",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}

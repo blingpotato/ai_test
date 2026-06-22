@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>미니 게임 아케이드</title>
+  <title>AI 교육 실습</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,8 +11,8 @@
   <div id="menu-screen" class="screen active">
     <div class="menu-container">
       <header class="menu-header">
-        <h1>🎮 미니 게임 아케이드</h1>
-        <p class="menu-subtitle">플레이할 게임을 선택하세요</p>
+        <h1>📚 AI 교육 실습</h1>
+        <p class="menu-subtitle">메뉴를 선택하세요</p>
       </header>
       <div class="menu-grid">
         <button class="menu-card" data-game="snake">
@@ -24,6 +24,11 @@
           <span class="menu-card-icon">🥊</span>
           <span class="menu-card-title">졸라맨 격투</span>
           <span class="menu-card-desc">2인 대전 스틱맨 파이터</span>
+        </button>
+        <button class="menu-card menu-card-news" data-href="ai-news.html">
+          <span class="menu-card-icon">📰</span>
+          <span class="menu-card-title">AI News Report</span>
+          <span class="menu-card-desc">최신 AI 뉴스 브리핑</span>
         </button>
       </div>
     </div>
@@ -82,11 +87,13 @@
         <div class="fighter-player-hud p1-hud">
           <span class="fighter-name">플레이어 1</span>
           <div class="hp-bar"><div id="p1-hp" class="hp-fill"></div></div>
+          <div class="special-bar"><div id="p1-special" class="special-fill"></div></div>
         </div>
         <div class="fighter-timer" id="round-timer">60</div>
         <div class="fighter-player-hud p2-hud">
           <span class="fighter-name">플레이어 2</span>
           <div class="hp-bar"><div id="p2-hp" class="hp-fill p2"></div></div>
+          <div class="special-bar"><div id="p2-special" class="special-fill p2"></div></div>
         </div>
       </div>
 
@@ -105,11 +112,11 @@
         <div class="fighter-controls-info">
           <div class="control-group">
             <strong>플레이어 1</strong>
-            <span>A/D 이동 · W 점프 · F 주먹 · G 발차기</span>
+            <span>A/D 이동 · W 점프 · F 주먹 · G 발차기(공중 가능) · R 필살기</span>
           </div>
           <div class="control-group">
             <strong>플레이어 2</strong>
-            <span>←/→ 이동 · ↑ 점프 · L 주먹 · ; 발차기</span>
+            <span>←/→ 이동 · ↑ 점프 · L 주먹 · ; 발차기(공중 가능) · O 필살기</span>
           </div>
         </div>
       </div>

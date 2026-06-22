@@ -68,7 +68,7 @@ body {
 
 .menu-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
 
@@ -95,6 +95,10 @@ body {
 
 .menu-card:nth-child(2):hover {
   border-color: var(--accent-2);
+}
+
+.menu-card-news:hover {
+  border-color: #a78bfa;
 }
 
 .menu-card:active {
@@ -359,6 +363,43 @@ canvas {
 .p2-hud .hp-bar {
   display: flex;
   justify-content: flex-end;
+}
+
+.special-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.special-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #a855f7, #fbbf24);
+  border-radius: 3px;
+  transition: width 0.15s;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+}
+
+.special-fill.p2 {
+  margin-left: auto;
+}
+
+.special-fill.ready {
+  animation: special-pulse 0.8s ease-in-out infinite;
+}
+
+.p2-hud .special-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@keyframes special-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(251, 191, 36, 0.5); }
+  50% { box-shadow: 0 0 12px rgba(251, 191, 36, 0.9); }
 }
 
 .fighter-timer {

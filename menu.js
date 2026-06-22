@@ -28,7 +28,14 @@
   }
 
   document.querySelectorAll(".menu-card").forEach((card) => {
-    card.addEventListener("click", () => startGame(card.dataset.game));
+    card.addEventListener("click", () => {
+      if (card.dataset.href) {
+        stopActiveGame();
+        window.location.href = card.dataset.href;
+        return;
+      }
+      startGame(card.dataset.game);
+    });
   });
 
   document.querySelectorAll("[data-back]").forEach((btn) => {
