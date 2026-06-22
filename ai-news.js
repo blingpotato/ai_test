@@ -56,8 +56,14 @@
       body: JSON.stringify({ keyword }),
     });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "보고서 생성 실패");
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error("서버 응답을 읽을 수 없습니다. Vercel 배포 URL에서 접속 중인지 확인해주세요.");
+    }
+
+    if (!res.ok) throw new Error(data.error || data.detail || "보고서 생성 실패");
     return data;
   }
 

@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "api/generate-report.js": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ]
