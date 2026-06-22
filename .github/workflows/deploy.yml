@@ -29,7 +29,15 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: |
+            index.html
+            ai-news.html
+            ai-news.css
+            ai-news.js
+            style.css
+            menu.js
+            snake.js
+            fighter.js
 
       - name: Deploy to GitHub Pages
         id: deployment
