@@ -413,6 +413,53 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.email-section {
+  border-left-color: #60a5fa;
+}
+
+.email-form {
+  display: flex;
+  gap: 10px;
+}
+
+.email-form input {
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.email-form input:focus {
+  outline: none;
+  border-color: #60a5fa;
+}
+
+.btn-email {
+  background: #60a5fa;
+  white-space: nowrap;
+}
+
+.btn-email:hover:not(:disabled) {
+  background: #3b82f6;
+}
+
+.email-status {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.email-status.success {
+  color: #4ade80;
+}
+
+.email-status.error {
+  color: #f87171;
+}
+
 @media (max-width: 560px) {
   .news-header h1 {
     font-size: 1.6rem;
@@ -429,5 +476,9 @@ body {
   .report-meta {
     flex-direction: column;
     gap: 6px;
+  }
+
+  .email-form {
+    flex-direction: column;
   }
 }

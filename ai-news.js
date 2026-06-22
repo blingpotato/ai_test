@@ -1,5 +1,6 @@
 (() => {
   const API_URL = "/api/generate-report";
+  const MAIL_API_URL = "/api/send-report";
   const DAYS = 3;
 
   const form = document.getElementById("search-form");
@@ -14,6 +15,7 @@
   const retryBtn = document.getElementById("retry-btn");
 
   let lastKeyword = "";
+  let lastReport = null;
 
   function threeDaysAgo() {
     return new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000);
@@ -67,6 +69,18 @@
     return data;
   }
 
+  async function sendReportEmail(to, report) {
+    const res = await fetch(MAIL_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to, report }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "메일 전송 실패");
+    return data;
+  }
+
   function renderReport(data) {
     const periodStart = threeDaysAgo();
     const periodEnd = new Date();
@@ -76,14 +90,23 @@
 
     reportEl.innerHTML = `
       <header class="report-header">
-        <span class="report-badge">AI 뉴스 분석 보고서</span>
+        <span class="report-badge">News Report</span>
         <h2 class="report-title">「${escapeHtml(data.keyword)}」 키워드 분석</h2>
         <div class="report-meta">
           <span>📅 ${formatFullDate(periodStart)} ~ ${formatFullDate(periodEnd)}</span>
           <span>🕐 생성: ${new Date(data.generatedAt || Date.now()).toLocaleString("ko-KR")}</span>
-          <span>📊 수집: ${articles.length}건 (Google 검색 · Gemini)</span>
+          <span>📊 수집: ${articles.length}건</span>
         </div>
       </header>
+
+      <section class="report-section email-section">
+        <h3>📧 메일로 전송</h3>
+        <form id="email-form" class="email-form">
+          <input type="email" id="email-input" placeholder="받을 이메일 주소" required>
+          <button type="submit" class="btn btn-email" id="email-btn">보고서 전송</button>
+        </form>
+        <p id="email-status" class="email-status" hidden></p>
+      </section>
 
       <section class="report-section">
         <h3>1. 요약</h3>
@@ -138,16 +161,43 @@
         </div>
       </section>
     `;
+
+    document.getElementById("email-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById("email-input");
+      const emailBtn = document.getElementById("email-btn");
+      const statusEl = document.getElementById("email-status");
+      const to = emailInput.value.trim();
+
+      emailBtn.disabled = true;
+      emailBtn.textContent = "전송 중...";
+      statusEl.hidden = true;
+
+      try {
+        await sendReportEmail(to, lastReport);
+        statusEl.textContent = `✅ ${to} 로 보고서를 전송했습니다.`;
+        statusEl.className = "email-status success";
+        statusEl.hidden = false;
+      } catch (err) {
+        statusEl.textContent = `❌ ${err.message || "메일 전송에 실패했습니다."}`;
+        statusEl.className = "email-status error";
+        statusEl.hidden = false;
+      } finally {
+        emailBtn.disabled = false;
+        emailBtn.textContent = "보고서 전송";
+      }
+    });
   }
 
   async function generateReport(keyword) {
     if (!keyword.trim()) return;
     lastKeyword = keyword.trim();
     setState("loading");
-    loadingTextEl.textContent = `「${lastKeyword}」 Google 검색 중... Gemini가 보고서를 작성하고 있습니다.`;
+    loadingTextEl.textContent = `「${lastKeyword}」 뉴스를 검색하고 보고서를 작성하는 중...`;
 
     try {
       const data = await fetchReport(lastKeyword);
+      lastReport = data;
       renderReport(data);
       setState("done");
       reportEl.scrollIntoView({ behavior: "smooth", block: "start" });
