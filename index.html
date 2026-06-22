@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>지렁이 게임</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>🐍 지렁이 게임</h1>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">점수</span>
+          <span id="score" class="stat-value">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">최고</span>
+          <span id="high-score" class="stat-value">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="game-area">
+      <canvas id="game" width="400" height="400" aria-label="지렁이 게임 보드"></canvas>
+
+      <div id="overlay" class="overlay">
+        <div class="overlay-content">
+          <h2 id="overlay-title">지렁이 게임</h2>
+          <p id="overlay-message">방향키 또는 WASD로 이동하세요</p>
+          <button id="start-btn" class="btn">시작하기</button>
+        </div>
+      </div>
+    </main>
+
+    <div class="controls">
+      <p class="controls-hint">키보드: ↑ ↓ ← → 또는 W A S D · 스페이스바: 일시정지/재개</p>
+      <div class="dpad" aria-label="방향 패드">
+        <button class="dpad-btn dpad-up" data-dir="up" aria-label="위">▲</button>
+        <button class="dpad-btn dpad-left" data-dir="left" aria-label="왼쪽">◀</button>
+        <button class="dpad-btn dpad-right" data-dir="right" aria-label="오른쪽">▶</button>
+        <button class="dpad-btn dpad-down" data-dir="down" aria-label="아래">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
