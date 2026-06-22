@@ -1,6 +1,7 @@
 (() => {
   const API_URL = "/api/generate-report";
   const MAIL_API_URL = "/api/send-report";
+  const EMAIL_CONFIG_URL = "/api/email-config";
   const DAYS = 3;
 
   const form = document.getElementById("search-form");
@@ -16,6 +17,14 @@
 
   let lastKeyword = "";
   let lastReport = null;
+  let emailConfig = { testMode: false, allowedEmail: "" };
+
+  async function loadEmailConfig() {
+    try {
+      const res = await fetch(EMAIL_CONFIG_URL);
+      if (res.ok) emailConfig = await res.json();
+    } catch { /* ignore */ }
+  }
 
   function threeDaysAgo() {
     return new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000);
@@ -101,8 +110,13 @@
 
       <section class="report-section email-section">
         <h3>📧 메일로 전송</h3>
+        ${emailConfig.testMode && emailConfig.allowedEmail
+          ? `<p class="email-hint">⚠️ 테스트 모드: <strong>${escapeHtml(emailConfig.allowedEmail)}</strong> 로만 전송 가능합니다.</p>`
+          : emailConfig.testMode
+            ? `<p class="email-hint">⚠️ 테스트 모드: Resend 가입 이메일로만 전송 가능합니다.</p>`
+            : ""}
         <form id="email-form" class="email-form">
-          <input type="email" id="email-input" placeholder="받을 이메일 주소" required>
+          <input type="email" id="email-input" placeholder="받을 이메일 주소" value="${escapeHtml(emailConfig.allowedEmail || "")}" required>
           <button type="submit" class="btn btn-email" id="email-btn">보고서 전송</button>
         </form>
         <p id="email-status" class="email-status" hidden></p>
@@ -198,6 +212,7 @@
     try {
       const data = await fetchReport(lastKeyword);
       lastReport = data;
+      await loadEmailConfig();
       renderReport(data);
       setState("done");
       reportEl.scrollIntoView({ behavior: "smooth", block: "start" });

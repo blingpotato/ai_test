@@ -58,12 +58,31 @@ function buildEmailHtml(report) {
   `;
 }
 
+function isTestMode() {
+  const from = process.env.REPORT_FROM_EMAIL || "onboarding@resend.dev";
+  return from.includes("resend.dev");
+}
+
+function formatResendError(message) {
+  if (message?.includes("only send testing emails")) {
+    const match = message.match(/\(([^)]+@[^)]+)\)/);
+    const email = match?.[1] || process.env.RESEND_TEST_EMAIL || "Resend 가입 이메일";
+    return `테스트 모드에서는 ${email} 로만 전송할 수 있습니다. 다른 주소로내려면 resend.com/domains 에서 도메인을 인증해주세요.`;
+  }
+  return message || "메일 전송에 실패했습니다.";
+}
+
 async function sendEmail(to, report) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.REPORT_FROM_EMAIL || "News Report <onboarding@resend.dev>";
+  const allowedEmail = process.env.RESEND_TEST_EMAIL;
 
   if (!apiKey) {
     throw new Error("RESEND_API_KEY가 Vercel 환경변수에 설정되지 않았습니다.");
+  }
+
+  if (isTestMode() && allowedEmail && to.toLowerCase() !== allowedEmail.toLowerCase()) {
+    throw new Error(`테스트 모드에서는 ${allowedEmail} 로만 전송할 수 있습니다.`);
   }
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -82,7 +101,7 @@ async function sendEmail(to, report) {
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.message || `메일 전송 실패 (${res.status})`);
+    throw new Error(formatResendError(data.message) || `메일 전송 실패 (${res.status})`);
   }
   return data;
 }
