@@ -1,15 +1,10 @@
-(() => {
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
-  const scoreEl = document.getElementById("score");
-  const highScoreEl = document.getElementById("high-score");
-  const overlay = document.getElementById("overlay");
-  const overlayTitle = document.getElementById("overlay-title");
-  const overlayMessage = document.getElementById("overlay-message");
-  const startBtn = document.getElementById("start-btn");
+const SnakeGame = (() => {
+  let canvas, ctx, scoreEl, highScoreEl, overlay, overlayTitle, overlayMessage, startBtn;
+  let loopId = null;
+  let keyHandler = null;
 
   const GRID = 20;
-  const CELL = canvas.width / GRID;
+  let CELL = 20;
   const TICK_MS = 120;
   const HIGH_SCORE_KEY = "snake-high-score";
 
@@ -25,12 +20,9 @@
   let nextDirection = DIRECTIONS.right;
   let food = { x: 0, y: 0 };
   let score = 0;
-  let highScore = Number(localStorage.getItem(HIGH_SCORE_KEY)) || 0;
+  let highScore = 0;
   let playing = false;
   let paused = false;
-  let loopId = null;
-
-  highScoreEl.textContent = highScore;
 
   function initSnake() {
     const mid = Math.floor(GRID / 2);
@@ -84,9 +76,7 @@
 
   function draw() {
     drawGrid();
-
     drawCell(food.x, food.y, "#f87171", CELL / 2);
-
     snake.forEach((seg, i) => {
       const isHead = i === 0;
       drawCell(seg.x, seg.y, isHead ? "#86efac" : "#4ade80", isHead ? 6 : 4);
@@ -106,18 +96,12 @@
 
   function tick() {
     direction = nextDirection;
-
     const head = snake[0];
-    const newHead = {
-      x: head.x + direction.x,
-      y: head.y + direction.y,
-    };
+    const newHead = { x: head.x + direction.x, y: head.y + direction.y };
 
     if (
-      newHead.x < 0 ||
-      newHead.x >= GRID ||
-      newHead.y < 0 ||
-      newHead.y >= GRID ||
+      newHead.x < 0 || newHead.x >= GRID ||
+      newHead.y < 0 || newHead.y >= GRID ||
       snake.some((s) => s.x === newHead.x && s.y === newHead.y)
     ) {
       gameOver();
@@ -184,20 +168,15 @@
     overlay.classList.remove("hidden");
   }
 
-  document.addEventListener("keydown", (e) => {
+  function onStartClick() {
+    if (playing && paused) resumeGame();
+    else startGame();
+  }
+
+  function onKeyDown(e) {
     const keyMap = {
-      ArrowUp: "up",
-      ArrowDown: "down",
-      ArrowLeft: "left",
-      ArrowRight: "right",
-      w: "up",
-      W: "up",
-      s: "down",
-      S: "down",
-      a: "left",
-      A: "left",
-      d: "right",
-      D: "right",
+      ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+      w: "up", W: "up", s: "down", S: "down", a: "left", A: "left", d: "right", D: "right",
     };
 
     if (keyMap[e.key]) {
@@ -208,31 +187,78 @@
 
     if (e.key === " ") {
       e.preventDefault();
-      if (playing && paused) {
-        resumeGame();
-      } else if (playing && !paused) {
-        pauseGame();
-      } else {
-        startGame();
-      }
+      if (playing && paused) resumeGame();
+      else if (playing && !paused) pauseGame();
+      else startGame();
     }
-  });
+  }
 
-  document.querySelectorAll(".dpad-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (playing && !paused) setDirection(btn.dataset.dir);
-    });
-  });
+  let dpadHandler = null;
+  let startHandler = null;
 
-  startBtn.addEventListener("click", () => {
-    if (playing && paused) {
-      resumeGame();
-    } else {
-      startGame();
+  function bindControls() {
+    keyHandler = onKeyDown;
+    document.addEventListener("keydown", keyHandler);
+
+    dpadHandler = (e) => {
+      const btn = e.target.closest(".dpad-btn");
+      if (btn && playing && !paused) setDirection(btn.dataset.dir);
+    };
+    document.querySelector("#snake-screen .dpad")?.addEventListener("click", dpadHandler);
+
+    startHandler = onStartClick;
+    startBtn.addEventListener("click", startHandler);
+  }
+
+  function unbindControls() {
+    if (keyHandler) {
+      document.removeEventListener("keydown", keyHandler);
+      keyHandler = null;
     }
-  });
+    if (dpadHandler) {
+      document.querySelector("#snake-screen .dpad")?.removeEventListener("click", dpadHandler);
+      dpadHandler = null;
+    }
+    if (startHandler) {
+      startBtn.removeEventListener("click", startHandler);
+      startHandler = null;
+    }
+  }
 
-  initSnake();
-  randomFood();
-  draw();
+  return {
+    init() {
+      canvas = document.getElementById("snake-canvas");
+      ctx = canvas.getContext("2d");
+      scoreEl = document.getElementById("score");
+      highScoreEl = document.getElementById("high-score");
+      overlay = document.getElementById("snake-overlay");
+      overlayTitle = document.getElementById("snake-overlay-title");
+      overlayMessage = document.getElementById("snake-overlay-message");
+      startBtn = document.getElementById("snake-start-btn");
+
+      CELL = canvas.width / GRID;
+      highScore = Number(localStorage.getItem(HIGH_SCORE_KEY)) || 0;
+      highScoreEl.textContent = highScore;
+
+      playing = false;
+      paused = false;
+      overlayTitle.textContent = "지렁이 게임";
+      overlayMessage.textContent = "방향키 또는 WASD로 이동하세요";
+      startBtn.textContent = "시작하기";
+      overlay.classList.remove("hidden");
+
+      initSnake();
+      randomFood();
+      draw();
+      bindControls();
+    },
+
+    destroy() {
+      playing = false;
+      paused = false;
+      clearInterval(loopId);
+      loopId = null;
+      unbindControls();
+    },
+  };
 })();
