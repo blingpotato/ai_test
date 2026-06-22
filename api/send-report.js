@@ -121,11 +121,11 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "요청 형식이 올바르지 않습니다." });
   }
 
-  const to = body?.to?.trim();
+  const to = body?.to?.trim() || process.env.RESEND_TEST_EMAIL?.trim();
   const report = body?.report;
 
   if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
-    return res.status(400).json({ error: "올바른 이메일 주소를 입력해주세요." });
+    return res.status(400).json({ error: "등록된 수신 이메일이 없습니다. Vercel에 RESEND_TEST_EMAIL을 설정해주세요." });
   }
   if (!report?.keyword) {
     return res.status(400).json({ error: "전송할 보고서가 없습니다." });

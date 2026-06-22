@@ -110,15 +110,10 @@
 
       <section class="report-section email-section">
         <h3>📧 메일로 전송</h3>
-        ${emailConfig.testMode && emailConfig.allowedEmail
-          ? `<p class="email-hint">⚠️ 테스트 모드: <strong>${escapeHtml(emailConfig.allowedEmail)}</strong> 로만 전송 가능합니다.</p>`
-          : emailConfig.testMode
-            ? `<p class="email-hint">⚠️ 테스트 모드: Resend 가입 이메일로만 전송 가능합니다.</p>`
-            : ""}
-        <form id="email-form" class="email-form">
-          <input type="email" id="email-input" placeholder="받을 이메일 주소" value="${escapeHtml(emailConfig.allowedEmail || "")}" required>
-          <button type="submit" class="btn btn-email" id="email-btn">보고서 전송</button>
-        </form>
+        ${emailConfig.allowedEmail
+          ? `<p class="email-recipient">등록된 수신 주소: <strong>${escapeHtml(emailConfig.allowedEmail)}</strong></p>`
+          : `<p class="email-hint">⚠️ Vercel에 RESEND_TEST_EMAIL 환경변수를 등록해주세요.</p>`}
+        <button type="button" class="btn btn-email" id="email-btn" ${emailConfig.allowedEmail ? "" : "disabled"}>보고서 전송</button>
         <p id="email-status" class="email-status" hidden></p>
       </section>
 
@@ -176,12 +171,12 @@
       </section>
     `;
 
-    document.getElementById("email-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const emailInput = document.getElementById("email-input");
+    document.getElementById("email-btn").addEventListener("click", async () => {
       const emailBtn = document.getElementById("email-btn");
       const statusEl = document.getElementById("email-status");
-      const to = emailInput.value.trim();
+      const to = emailConfig.allowedEmail;
+
+      if (!to) return;
 
       emailBtn.disabled = true;
       emailBtn.textContent = "전송 중...";
