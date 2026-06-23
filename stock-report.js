@@ -610,10 +610,10 @@
     el.innerHTML = `${parts.join("")}${highlights ? `<ul class="live-summary-highlights">${highlights}</ul>` : ""}`;
   }
 
-  function renderLiveNews(items) {
-    const el = document.getElementById("live-market-news");
+  function renderLiveNews(el, items, emptyText) {
+    if (!el) return;
     if (!items?.length) {
-      el.innerHTML = '<li class="live-news-item"><span class="live-news-meta">표시할 뉴스가 없습니다.</span></li>';
+      el.innerHTML = `<li class="live-news-item"><span class="live-news-meta">${escapeHtml(emptyText)}</span></li>`;
       return;
     }
 
@@ -653,7 +653,17 @@
       renderLiveQuoteCards(document.getElementById("live-bigtech-cards"), data.bigTech || [], { compact: true });
       renderLiveQuoteCards(document.getElementById("live-commodity-cards"), data.commodities || [], { compact: true });
       renderLiveQuoteCards(document.getElementById("live-domestic-cards"), data.domestic || []);
-      renderLiveNews(data.news || []);
+      const news = data.news || {};
+      renderLiveNews(
+        document.getElementById("live-news-overseas"),
+        news.overseas || [],
+        "해외 증시 뉴스를 불러오지 못했습니다.",
+      );
+      renderLiveNews(
+        document.getElementById("live-news-domestic"),
+        news.domestic || [],
+        "국내 증시 뉴스를 불러오지 못했습니다.",
+      );
 
       const times = [
         ...(data.overseas || []),

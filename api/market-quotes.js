@@ -89,30 +89,58 @@ async function fetchQuotes(items) {
   });
 }
 
-async function fetchYahooNews(query, limit = 5) {
-  const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&newsCount=${limit}&quotesCount=0&listsCount=0`;
+async function fetchGoogleNewsRss(query, limit = 5) {
+  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
   const res = await fetchWithTimeout(url, { headers: UA });
   if (!res.ok) return [];
 
-  const data = await res.json();
-  return (data.news || []).map((n) => ({
-    title: n.title || "",
-    url: n.link || "",
-    publisher: n.publisher || "",
-    publishedAt: n.providerPublishTime
-      ? new Date(n.providerPublishTime * 1000).toISOString()
-      : null,
-    region: query,
-  }));
+  const xml = await res.text();
+  const items = [];
+
+  for (const match of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+    const block = match[1];
+    const title = decodeHtml(
+      block.match(/<title>([\s\S]*?)<\/title>/)?.[1]
+        ?.replace(/<!\[CDATA\[|\]\]>/g, "")
+        .trim() || "",
+    );
+    const link = block.match(/<link>([\s\S]*?)<\/link>/)?.[1]?.trim() || "";
+    const pubDate = block.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1]?.trim() || "";
+    const publisher = decodeHtml(
+      block.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1]?.trim() || "",
+    );
+
+    if (!title) continue;
+
+    const publishedAt = pubDate ? new Date(pubDate) : null;
+    items.push({
+      title,
+      url: link,
+      publisher,
+      publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime())
+        ? publishedAt.toISOString()
+        : null,
+      lang: "ko",
+      query,
+    });
+
+    if (items.length >= limit) break;
+  }
+
+  return items;
 }
 
-async function fetchMarketNews() {
-  const batches = await Promise.allSettled([
-    fetchYahooNews("US stock market", 5),
-    fetchYahooNews("NASDAQ technology", 4),
-    fetchYahooNews("KOSPI Korea stock", 4),
-  ]);
+function decodeHtml(text) {
+  return String(text)
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+}
 
+function mergeNewsLists(batches, limit = 8) {
   const merged = [];
   const seen = new Set();
 
@@ -126,7 +154,39 @@ async function fetchMarketNews() {
     }
   }
 
-  return merged.slice(0, 10);
+  return merged
+    .sort((a, b) => {
+      const ta = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+      const tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+      return tb - ta;
+    })
+    .slice(0, limit);
+}
+
+async function fetchOverseasNews() {
+  const batches = await Promise.allSettled([
+    fetchGoogleNewsRss("미국 증시", 5),
+    fetchGoogleNewsRss("나스닥", 4),
+    fetchGoogleNewsRss("월가", 4),
+  ]);
+  return mergeNewsLists(batches, 8);
+}
+
+async function fetchDomesticNews() {
+  const batches = await Promise.allSettled([
+    fetchGoogleNewsRss("코스피", 5),
+    fetchGoogleNewsRss("코스닥", 4),
+    fetchGoogleNewsRss("국내 증시", 4),
+  ]);
+  return mergeNewsLists(batches, 8);
+}
+
+async function fetchMarketNews() {
+  const [overseas, domestic] = await Promise.all([
+    fetchOverseasNews(),
+    fetchDomesticNews(),
+  ]);
+  return { overseas, domestic };
 }
 
 function fmtPctSigned(pct) {
@@ -223,7 +283,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       fetchedAt: new Date().toISOString(),
-      source: "Yahoo Finance",
+      source: "Yahoo Finance · Google 뉴스(한국어)",
       overseas,
       domestic,
       bigTech,
