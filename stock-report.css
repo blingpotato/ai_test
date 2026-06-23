@@ -55,6 +55,72 @@ body {
 .stock-header h1 { font-size: 1.6rem; margin-bottom: 6px; }
 .stock-tagline { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
 
+.live-market-panel h2 {
+  font-size: 1.15rem;
+  margin-bottom: 4px;
+}
+
+.live-market-desc {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.live-market-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.live-market-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.live-market-updated {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
+.live-market-state {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 8px 0;
+}
+
+.live-market-state.error p {
+  margin-bottom: 6px;
+}
+
+.live-market-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.live-market-group {
+  margin-bottom: 18px;
+}
+
+.live-market-group:last-child {
+  margin-bottom: 0;
+}
+
+.live-market-group h3 {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -177,6 +243,10 @@ body {
   background: var(--surface-2);
   border-radius: 10px;
   padding: 12px;
+}
+
+.index-card-error {
+  border: 1px solid rgba(248, 113, 113, 0.35);
 }
 
 .index-card-name { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }

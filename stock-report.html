@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- GitHub Pages에서 실시간 시세 API를 쓰려면 Vercel 배포 URL을 입력하세요 (예: https://your-app.vercel.app) -->
+  <meta name="vercel-api-base" content="">
   <title>증시현황 보고서</title>
   <link rel="stylesheet" href="stock-report.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -13,9 +15,39 @@
       <a href="index.html" class="back-link">← 메뉴로 돌아가기</a>
       <div class="stock-header-main">
         <h1>📈 증시현황 보고서</h1>
-        <p class="stock-tagline">키움 거래대금상위 엑셀을 업로드하면 해외·국내 증시 현황과 거래대금 상위 종목 보고서를 생성합니다.</p>
+        <p class="stock-tagline">키움 거래대금상위 엑셀을 업로드하면 거래대금 상위 종목 보고서를 생성합니다. 상단에는 실시간 해외·국내 지수가 함께 표시됩니다.</p>
       </div>
     </header>
+
+    <section class="panel live-market-panel" id="live-market-panel">
+      <div class="live-market-head">
+        <div>
+          <h2>실시간 증시 현황</h2>
+          <p class="live-market-desc">엑셀 업로드와 별개로 Yahoo Finance 기준 최신 지수를 표시합니다.</p>
+        </div>
+        <div class="live-market-actions">
+          <span class="live-market-updated" id="live-market-updated">불러오는 중…</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="live-market-refresh">새로고침</button>
+        </div>
+      </div>
+
+      <div id="live-market-loading" class="live-market-state">시세를 불러오는 중…</div>
+      <div id="live-market-error" class="live-market-state error" hidden>
+        <p id="live-market-error-text">실시간 시세를 불러오지 못했습니다.</p>
+        <p class="live-market-hint">Vercel 배포 환경에서 API가 동작합니다. GitHub Pages에서는 API 경로가 없을 수 있습니다.</p>
+      </div>
+
+      <div id="live-market-content" hidden>
+        <div class="live-market-group">
+          <h3>해외 증시</h3>
+          <div class="index-cards" id="live-overseas-cards"></div>
+        </div>
+        <div class="live-market-group">
+          <h3>국내 증시</h3>
+          <div class="index-cards" id="live-domestic-cards"></div>
+        </div>
+      </div>
+    </section>
 
     <section class="upload-panel panel" id="drop-zone">
       <input type="file" id="file-input" accept=".xlsx,.xls" hidden>

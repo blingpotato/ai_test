@@ -550,4 +550,79 @@
     errorEl.hidden = true;
     dropZone.style.display = "";
   });
+
+  const MARKET_API_URL = (() => {
+    const base = document.querySelector('meta[name="vercel-api-base"]')?.content?.trim().replace(/\/$/, "");
+    return base ? `${base}/api/market-quotes` : "/api/market-quotes";
+  })();
+  const liveMarketLoading = document.getElementById("live-market-loading");
+  const liveMarketError = document.getElementById("live-market-error");
+  const liveMarketErrorText = document.getElementById("live-market-error-text");
+  const liveMarketContent = document.getElementById("live-market-content");
+  const liveMarketUpdated = document.getElementById("live-market-updated");
+  const liveMarketRefresh = document.getElementById("live-market-refresh");
+
+  function renderLiveQuoteCards(el, items) {
+    el.innerHTML = items.map((item) => {
+      if (item.error) {
+        return `
+          <div class="index-card index-card-error">
+            <div class="index-card-name">${escapeHtml(item.label || item.symbol)}</div>
+            <div class="index-card-change change-flat">${escapeHtml(item.error)}</div>
+          </div>
+        `;
+      }
+
+      const digits = item.currency === "KRW" ? 2 : 2;
+      return `
+        <div class="index-card">
+          <div class="index-card-name">${escapeHtml(item.label || item.name)}</div>
+          <div class="index-card-price">${fmtNum(item.price, digits)}</div>
+          <div class="index-card-change ${changeClass(item.change)}">${fmtChange(item.change)} (${fmtPct(item.pct)})</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function loadLiveMarket() {
+    liveMarketLoading.hidden = false;
+    liveMarketError.hidden = true;
+    liveMarketContent.hidden = true;
+    liveMarketUpdated.textContent = "불러오는 중…";
+    liveMarketRefresh.disabled = true;
+
+    try {
+      const res = await fetch(MARKET_API_URL);
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || `시세 API 오류 (${res.status})`);
+      }
+
+      renderLiveQuoteCards(document.getElementById("live-overseas-cards"), data.overseas || []);
+      renderLiveQuoteCards(document.getElementById("live-domestic-cards"), data.domestic || []);
+
+      const times = [...(data.overseas || []), ...(data.domestic || [])]
+        .map((q) => q.marketTime)
+        .filter(Boolean)
+        .map((t) => new Date(t).getTime())
+        .filter((t) => !Number.isNaN(t));
+
+      const latest = times.length ? new Date(Math.max(...times)) : new Date(data.fetchedAt);
+      liveMarketUpdated.textContent = `갱신: ${latest.toLocaleString("ko-KR")} · ${data.source || "Yahoo Finance"}`;
+
+      liveMarketLoading.hidden = true;
+      liveMarketContent.hidden = false;
+    } catch (err) {
+      liveMarketLoading.hidden = true;
+      liveMarketError.hidden = false;
+      liveMarketErrorText.textContent = err.message || "실시간 시세를 불러오지 못했습니다.";
+      liveMarketUpdated.textContent = "갱신 실패";
+    } finally {
+      liveMarketRefresh.disabled = false;
+    }
+  }
+
+  liveMarketRefresh.addEventListener("click", loadLiveMarket);
+  loadLiveMarket();
 })();

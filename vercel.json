@@ -6,6 +6,9 @@
     },
     "api/send-report.js": {
       "maxDuration": 30
+    },
+    "api/market-quotes.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
