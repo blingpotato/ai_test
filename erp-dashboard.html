@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP 분석 대시보드</title>
+  <link rel="stylesheet" href="erp-common.css">
+  <link rel="stylesheet" href="erp-dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="erp-header">
+    <div class="erp-header-inner">
+      <a href="index.html" class="erp-brand">
+        <span class="erp-brand-mark">E</span>
+        <div class="erp-brand-text">
+          <strong>ERP ANALYTICS</strong>
+          <span>업로드 · 분석 · 대시보드</span>
+        </div>
+      </a>
+      <nav class="erp-nav" aria-label="ERP 메뉴">
+        <a href="erp-upload.html">데이터 입력</a>
+        <a href="erp-dashboard.html" class="active">대시보드</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="erp-main">
+    <div id="loading" class="state-center">
+      <p>불러오는 중…</p>
+    </div>
+
+    <div id="no-data" class="no-data nk-card" hidden>
+      <div class="no-data-icon">📊</div>
+      <h2>아직 불러온 ERP 데이터가 없습니다</h2>
+      <p>데이터 입력 화면에서 CSV를 업로드하거나 샘플 데이터를 불러오세요.</p>
+      <a href="erp-upload.html" class="btn btn-primary">데이터 입력하러 가기</a>
+    </div>
+
+    <div id="dashboard" class="dash" hidden>
+      <header class="dash-head">
+        <div>
+          <h1>경영 대시보드</h1>
+          <p class="dash-period" id="dash-period"></p>
+        </div>
+        <span class="dash-meta" id="dash-meta"></span>
+      </header>
+
+      <section class="kpi-grid" id="kpi-grid" aria-label="핵심 지표"></section>
+
+      <section class="chart-grid" id="chart-grid">
+        <article class="chart-card nk-card">
+          <div class="chart-card-head">
+            <h3>월별 매출 추이</h3>
+            <p>매출과 매출총이익 (월별)</p>
+          </div>
+          <div class="chart-box"><canvas id="chart-monthly"></canvas></div>
+        </article>
+        <article class="chart-card nk-card">
+          <div class="chart-card-head">
+            <h3>카테고리별 매출</h3>
+            <p>상품 카테고리 기준</p>
+          </div>
+          <div class="chart-box"><canvas id="chart-category"></canvas></div>
+        </article>
+        <article class="chart-card nk-card">
+          <div class="chart-card-head">
+            <h3>채널별 매출</h3>
+            <p>판매 채널 기준</p>
+          </div>
+          <div class="chart-box"><canvas id="chart-channel"></canvas></div>
+        </article>
+        <article class="chart-card nk-card">
+          <div class="chart-card-head">
+            <h3>결제수단별 매출</h3>
+            <p>결제 방식 구성</p>
+          </div>
+          <div class="chart-box"><canvas id="chart-payment"></canvas></div>
+        </article>
+        <article class="chart-card nk-card">
+          <div class="chart-card-head">
+            <h3>고객 등급별 매출</h3>
+            <p>VIP / 일반 / 휴면</p>
+          </div>
+          <div class="chart-box"><canvas id="chart-tier"></canvas></div>
+        </article>
+        <article class="chart-card nk-card">
+          <div class="chart-card-head">
+            <h3>주문 상태 분포</h3>
+            <p>주문 건수 기준</p>
+          </div>
+          <div class="chart-box"><canvas id="chart-status"></canvas></div>
+        </article>
+        <article class="chart-card nk-card">
+          <div class="chart-card-head">
+            <h3>브랜드별 매출 TOP</h3>
+            <p>매출 상위 브랜드</p>
+          </div>
+          <div class="chart-box"><canvas id="chart-brand"></canvas></div>
+        </article>
+        <article class="chart-card nk-card">
+          <div class="chart-card-head">
+            <h3>지역별 매출 TOP</h3>
+            <p>고객 도시 기준</p>
+          </div>
+          <div class="chart-box"><canvas id="chart-city"></canvas></div>
+        </article>
+      </section>
+
+      <section class="table-grid">
+        <div class="table-block">
+          <h2>상위 상품 (매출 TOP 10)</h2>
+          <div class="data-table-wrap" id="table-products"></div>
+        </div>
+        <div class="table-block">
+          <h2>상위 고객 (매출 TOP 10)</h2>
+          <div class="data-table-wrap" id="table-customers"></div>
+        </div>
+      </section>
+
+      <section class="table-block table-block-wide">
+        <h2>재고 위험 품목</h2>
+        <p class="table-desc">월평균 판매 속도 대비 재고 커버 기간이 짧거나(소진 임박), 단종 잔여 재고가 있는 품목입니다.</p>
+        <div class="data-table-wrap" id="table-stock"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="erp-footer">
+    <div class="erp-footer-inner">ERP DATA ANALYTICS · 분석은 브라우저에서 수행됩니다.</div>
+  </footer>
+
+  <script src="erp-data.js"></script>
+  <script src="erp-dashboard.js"></script>
+</body>
+</html>

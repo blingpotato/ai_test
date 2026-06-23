@@ -102,6 +102,10 @@ body {
   border-color: #a78bfa;
 }
 
+.menu-card-erp:hover {
+  border-color: #38bdf8;
+}
+
 .menu-card:active {
   transform: translateY(0);
 }

@@ -34,6 +34,15 @@ jobs:
             ai-news.html
             ai-news.css
             ai-news.js
+            erp-dashboard.html
+            erp-dashboard.css
+            erp-dashboard.js
+            erp-upload.html
+            erp-upload.css
+            erp-upload.js
+            erp-common.css
+            erp-data.js
+            erp_data
             style.css
             menu.js
             snake.js

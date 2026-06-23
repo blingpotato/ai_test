@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP 데이터 입력</title>
+  <link rel="stylesheet" href="erp-common.css">
+  <link rel="stylesheet" href="erp-upload.css">
+</head>
+<body>
+  <header class="erp-header">
+    <div class="erp-header-inner">
+      <a href="index.html" class="erp-brand">
+        <span class="erp-brand-mark">E</span>
+        <div class="erp-brand-text">
+          <strong>ERP ANALYTICS</strong>
+          <span>업로드 · 분석 · 대시보드</span>
+        </div>
+      </a>
+      <nav class="erp-nav" aria-label="ERP 메뉴">
+        <a href="erp-upload.html" class="active">데이터 입력</a>
+        <a href="erp-dashboard.html" id="nav-dashboard" class="disabled">대시보드</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="erp-main">
+    <header class="upload-hero panel">
+      <div class="upload-hero-row">
+        <div>
+          <h1>ERP 데이터 입력</h1>
+          <p>4개의 CSV(상품·고객·주문·주문상세)를 업로드하거나 샘플 데이터를 불러오세요. 입력 즉시 유효성 검사를 수행합니다.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="reset-btn" hidden>데이터 초기화</button>
+      </div>
+      <p class="saved-hint" id="saved-hint" hidden></p>
+    </header>
+
+    <section class="drop-zone panel" id="drop-zone">
+      <input type="file" id="file-input" accept=".csv" multiple hidden>
+      <div class="drop-inner">
+        <span class="drop-icon">📂</span>
+        <p class="drop-title">4개의 ERP CSV 파일을 끌어다 놓거나 클릭하여 업로드</p>
+        <p class="drop-hint">products.csv · customers.csv · sales_orders.csv · sales_order_items.csv</p>
+        <button type="button" class="btn btn-secondary" id="browse-btn">파일 선택</button>
+      </div>
+    </section>
+
+    <section class="file-grid" id="file-grid" aria-label="업로드 상태"></section>
+
+    <section class="validation-panel panel" id="validation-panel" hidden>
+      <div class="validation-head">
+        <h2>데이터 검증 결과</h2>
+        <span class="validation-badge" id="validation-badge">검증 중…</span>
+      </div>
+      <div class="validation-steps" id="validation-steps"></div>
+      <ul class="validation-errors" id="validation-errors"></ul>
+      <p class="upload-notice" id="upload-notice" hidden></p>
+      <div class="validation-actions">
+        <button type="button" class="btn btn-primary" id="go-dashboard-btn" disabled>대시보드로 이동 →</button>
+      </div>
+    </section>
+
+    <section class="sample-panel panel">
+      <h2>처음이신가요?</h2>
+      <p>내장된 샘플 ERP 데이터(2023~2025, 약 2.3만 행)를 불러와 바로 체험해 보세요.</p>
+      <button type="button" class="btn btn-primary" id="sample-btn">샘플 데이터 불러오기</button>
+    </section>
+
+    <section class="steps-info">
+      <article class="step-card panel">
+        <span class="step-num">1</span>
+        <h3>데이터 검증</h3>
+        <p>4개 테이블 스키마를 검사하고 참조 무결성을 점검합니다.</p>
+      </article>
+      <article class="step-card panel">
+        <span class="step-num">2</span>
+        <h3>대시보드 생성</h3>
+        <p>매출·수익성·고객·재고 KPI와 차트를 자동 시각화합니다.</p>
+      </article>
+      <article class="step-card panel">
+        <span class="step-num">3</span>
+        <h3>경영 인사이트</h3>
+        <p>채널·카테고리·고객 등급별 분석으로 의사결정을 지원합니다.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="erp-footer">
+    <div class="erp-footer-inner">ERP DATA ANALYTICS · 분석은 브라우저에서 수행됩니다.</div>
+  </footer>
+
+  <script src="erp-data.js"></script>
+  <script src="erp-upload.js"></script>
+</body>
+</html>
