@@ -106,6 +106,10 @@ body {
   border-color: #38bdf8;
 }
 
+.menu-card-stock:hover {
+  border-color: #f59e0b;
+}
+
 .menu-card:active {
   transform: translateY(0);
 }

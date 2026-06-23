@@ -48,6 +48,10 @@ jobs:
             menu.js
             snake.js
             fighter.js
+            stock-report.html
+            stock-report.css
+            stock-report.js
+            stock_data
 
       - name: Deploy to GitHub Pages
         id: deployment

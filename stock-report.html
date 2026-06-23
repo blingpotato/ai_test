@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>증시현황 보고서</title>
+  <link rel="stylesheet" href="stock-report.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="stock-app">
+    <header class="stock-header">
+      <a href="index.html" class="back-link">← 메뉴로 돌아가기</a>
+      <div class="stock-header-main">
+        <h1>📈 증시현황 보고서</h1>
+        <p class="stock-tagline">키움 거래대금상위 엑셀을 업로드하면 해외·국내 증시 현황과 거래대금 상위 종목 보고서를 생성합니다.</p>
+      </div>
+    </header>
+
+    <section class="upload-panel panel" id="drop-zone">
+      <input type="file" id="file-input" accept=".xlsx,.xls" hidden>
+      <div class="drop-inner">
+        <span class="drop-icon">📂</span>
+        <p class="drop-title">증시현황 엑셀 파일을 끌어다 놓거나 클릭하여 업로드</p>
+        <p class="drop-hint">예: 거래대금상위_2026_06_23_1503.xlsx · 파일명의 날짜·시간이 생성시각입니다</p>
+        <button type="button" class="btn btn-secondary" id="browse-btn">파일 선택</button>
+      </div>
+    </section>
+
+    <section class="sample-panel panel">
+      <h2>처음이신가요?</h2>
+      <p>실제 형식의 샘플 엑셀을 내려받아 확인한 뒤 업로드해 보세요.</p>
+      <a href="stock_data/거래대금상위_2026_06_23_1503.xlsx" class="btn btn-primary" download>샘플 엑셀 다운로드</a>
+    </section>
+
+    <div id="loading" class="state-panel" hidden>
+      <p>엑셀 파일을 분석하는 중…</p>
+    </div>
+
+    <div id="error" class="state-panel error" hidden>
+      <p id="error-text">파일을 분석하지 못했습니다.</p>
+      <button type="button" class="btn btn-secondary" id="retry-btn">다시 시도</button>
+    </div>
+
+    <article id="report" class="report" hidden>
+      <header class="report-head panel">
+        <h2>증시현황 분석 보고서</h2>
+        <p class="report-time" id="report-time"></p>
+        <p class="report-file" id="report-file"></p>
+      </header>
+
+      <section class="panel">
+        <h3>종합 요약</h3>
+        <p class="summary-text" id="summary-text"></p>
+        <ul class="insight-list" id="insight-list"></ul>
+      </section>
+
+      <section class="panel narrative-panel">
+        <h3 id="overseas-title">해외 증시 현황</h3>
+        <div class="narrative-block" id="overseas-narrative"></div>
+        <div class="index-cards" id="overseas-cards"></div>
+      </section>
+
+      <section class="panel narrative-panel">
+        <h3 id="domestic-title">국내 증시 현황</h3>
+        <div class="narrative-block" id="domestic-narrative"></div>
+        <div class="index-cards" id="domestic-cards"></div>
+      </section>
+
+      <section class="panel">
+        <h3>금일 거래대금 상위 종목</h3>
+        <p class="section-desc" id="volume-desc"></p>
+        <div class="table-wrap" id="volume-table"></div>
+      </section>
+    </article>
+  </div>
+
+  <script src="stock-report.js"></script>
+</body>
+</html>
