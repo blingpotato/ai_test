@@ -110,36 +110,143 @@
     return items;
   }
 
+  function findTableHeaderRow(rows) {
+    for (let i = 0; i < rows.length; i++) {
+      const line = rows[i].map(norm).join(" ");
+      if (line.includes("순위") && line.includes("종목코드") && (line.includes("종목명") || line.includes("거래대금"))) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  function parseStockQuotesFromText(text) {
+    const items = [];
+    const re = /([가-힣A-Za-z0-9./&\s]+?)\s+([\d,.]+)\s*\(([+-]?[\d.]+%)\)/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const name = m[1].trim().replace(/\s+/g, " ");
+      if (!name || /다우|S&P|나스닥|코스피|코스닥|달러|WTI|금|은/.test(name) && name.length < 3) continue;
+      const pct = toNum(m[3]);
+      items.push({
+        name,
+        price: toNum(m[2].replace(/,/g, "")),
+        pct,
+        change: null,
+        label: m[0],
+      });
+    }
+    return items;
+  }
+
   function parseKiwoomNarrative(rows) {
+    const headerRow = findTableHeaderRow(rows);
+    const narrativeRows = headerRow > 0 ? rows.slice(0, headerRow) : rows.slice(0, 30);
+
     const narrative = {
       overseasTitle: "",
       overseasIndices: [],
+      overseasIndexText: "",
+      sectors: [],
+      overseasSummary: "",
+      domesticTitle: "",
+      domesticIndices: [],
+      domesticIndexText: "",
+      domesticSummary: "",
       bigtech: "",
       fx: "",
       overseasComment: "",
-      domesticTitle: "",
-      domesticIndices: [],
       domesticComment: "",
     };
 
-    for (let i = 0; i < Math.min(rows.length, 10); i++) {
-      const text = cellText(rows[i]);
+    let currentSector = null;
+    let pendingSummary = null;
+
+    for (const row of narrativeRows) {
+      const raw = cellText(row);
+      const text = raw.replace(/\s+/g, " ").trim();
       if (!text) continue;
 
       if (/■\s*전일\s*미국증시/.test(text)) {
-        narrative.overseasTitle = text.split(/\s{2,}/)[0] || text;
-        narrative.overseasIndices = parseIndicesFromText(text);
-      } else if (/빅테크/.test(text)) {
-        narrative.bigtech = text.trim();
-      } else if (/^\s*·/.test(text) && /환율/.test(text)) {
-        narrative.fx = text.trim();
-      } else if (text.startsWith("└") && !narrative.overseasComment) {
-        narrative.overseasComment = text.replace(/^└\s*/, "").trim();
-      } else if (/■\s*오늘\s*국내증시/.test(text)) {
-        narrative.domesticTitle = text.split(/\s{2,}/)[0] || text;
-        narrative.domesticIndices = parseIndicesFromText(text);
-      } else if (text.startsWith("└") && narrative.overseasComment) {
-        narrative.domesticComment = text.replace(/^└\s*/, "").trim();
+        narrative.overseasTitle = (text.match(/■[^■]+/) || [text])[0].trim();
+        pendingSummary = null;
+        currentSector = null;
+        continue;
+      }
+      if (/■\s*오늘\s*국내증시/.test(text)) {
+        narrative.domesticTitle = (text.match(/■[^■]+/) || [text])[0].trim();
+        pendingSummary = null;
+        currentSector = null;
+        continue;
+      }
+      if (/^▸\s*\[/.test(text)) {
+        currentSector = { title: text.replace(/^▸\s*/, "").trim(), content: "" };
+        narrative.sectors.push(currentSector);
+        pendingSummary = null;
+        continue;
+      }
+      if (text === "· 빅테크" || /^·\s*빅테크\s*$/.test(text)) {
+        currentSector = null;
+        pendingSummary = null;
+        narrative.bigtech = "· 빅테크";
+        continue;
+      }
+      if (/^·\s*환율/.test(text)) {
+        currentSector = null;
+        pendingSummary = null;
+        narrative.fx = text;
+        continue;
+      }
+      if (text === "· 요약") {
+        currentSector = null;
+        pendingSummary = narrative.domesticTitle ? "domestic" : "overseas";
+        continue;
+      }
+      if (pendingSummary === "overseas") {
+        narrative.overseasSummary += `${narrative.overseasSummary ? " " : ""}${raw.trim()}`;
+        narrative.overseasComment = narrative.overseasSummary;
+        continue;
+      }
+      if (pendingSummary === "domestic") {
+        narrative.domesticSummary += `${narrative.domesticSummary ? " " : ""}${raw.trim()}`;
+        narrative.domesticComment = narrative.domesticSummary;
+        continue;
+      }
+
+      if (/다우|S&P\s*500?|나스닥/.test(text) && !narrative.domesticTitle) {
+        narrative.overseasIndexText = raw.trim();
+        narrative.overseasIndices = parseIndicesFromText(raw);
+        currentSector = null;
+        continue;
+      }
+      if (/코스피|코스닥/.test(text) && narrative.domesticTitle) {
+        narrative.domesticIndexText = raw.trim();
+        narrative.domesticIndices = parseIndicesFromText(raw);
+        currentSector = null;
+        continue;
+      }
+
+      if (currentSector) {
+        currentSector.content = raw.trim();
+        continue;
+      }
+
+      if (narrative.fx && /달러|WTI|금|은|선물/.test(text)) {
+        narrative.fx = `${narrative.fx}\n${raw.trim()}`;
+        continue;
+      }
+      if (narrative.bigtech && /테슬라|엔비디아|애플|MS|메타|아마존|알파벳/.test(text)) {
+        narrative.bigtech = narrative.bigtech === "· 빅테크"
+          ? `· 빅테크\n${raw.trim()}`
+          : `${narrative.bigtech}\n${raw.trim()}`;
+        continue;
+      }
+      if (text.startsWith("└")) {
+        if (!narrative.overseasComment) {
+          narrative.overseasComment = text.replace(/^└\s*/, "").trim();
+        } else {
+          narrative.domesticComment = text.replace(/^└\s*/, "").trim();
+        }
       }
     }
 
@@ -147,13 +254,17 @@
   }
 
   function findHeaderRow(rows, keywords) {
-    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+    const tableRow = findTableHeaderRow(rows);
+    if (tableRow >= 0 && keywords.some((k) => norm(keywords.join(" ")).includes(k) || true)) {
+      return tableRow;
+    }
+    for (let i = 0; i < Math.min(rows.length, 40); i++) {
       const line = rows[i].map(norm).join(" ");
       if (keywords.every((k) => line.includes(k)) || keywords.some((k) => line.includes(k) && line.includes("순위"))) {
         if (line.includes("순위") && (line.includes("종목") || line.includes("종목명"))) return i;
       }
     }
-    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+    for (let i = 0; i < Math.min(rows.length, 40); i++) {
       const line = rows[i].map(norm).join(" ");
       if (keywords.some((k) => line.includes(k))) return i;
     }
@@ -170,7 +281,8 @@
   }
 
   function parseKiwoomVolumeTable(rows) {
-    const hi = findHeaderRow(rows, ["순위", "종목코드", "거래대금"]);
+    const hi = findTableHeaderRow(rows);
+    if (hi < 0) return [];
     const headers = rows[hi] || [];
     const cols = {
       rank: colIndex(headers, ["순위"]),
@@ -178,9 +290,12 @@
       market: colIndex(headers, ["시장"]),
       name: colIndex(headers, ["종목명", "종목"]),
       theme: colIndex(headers, ["테마"]),
+      low: colIndex(headers, ["저가"]),
       price: colIndex(headers, ["현재가"]),
       change: colIndex(headers, ["전일대비", "대비"]),
       pct: colIndex(headers, ["등락률"]),
+      d1: colIndex(headers, ["d-1", "전일등락"]),
+      d2: colIndex(headers, ["d-2", "전전일"]),
       volume: colIndex(headers, ["거래대금"]),
       news: colIndex(headers, ["뉴스"]),
     };
@@ -200,11 +315,14 @@
         market: String(row[cols.market >= 0 ? cols.market : 2] ?? "").trim(),
         name,
         theme: String(row[cols.theme >= 0 ? cols.theme : 5] ?? "").trim(),
-        price: toNum(row[cols.price >= 0 ? cols.price : 8]),
-        change: toNum(row[cols.change >= 0 ? cols.change : 9]),
-        pct: toNum(row[cols.pct >= 0 ? cols.pct : 10]),
-        volume: toNum(row[cols.volume >= 0 ? cols.volume : 14]),
-        news: String(row[cols.news >= 0 ? cols.news : 15] ?? "").trim(),
+        price: toNum(row[cols.price >= 0 ? cols.price : 9]),
+        low: toNum(row[cols.low >= 0 ? cols.low : 8]),
+        change: toNum(row[cols.change >= 0 ? cols.change : 10]),
+        pct: toNum(row[cols.pct >= 0 ? cols.pct : 11]),
+        d1Pct: toNum(row[cols.d1 >= 0 ? cols.d1 : 12]),
+        d2Pct: toNum(row[cols.d2 >= 0 ? cols.d2 : 13]),
+        volume: toNum(row[cols.volume >= 0 ? cols.volume : 15]),
+        news: String(row[cols.news >= 0 ? cols.news : 16] ?? "").trim(),
       });
     }
 
@@ -214,12 +332,14 @@
   function parseKiwoomSheet(rows) {
     const narrative = parseKiwoomNarrative(rows);
     const volume = parseKiwoomVolumeTable(rows);
+    const analytics = computeVolumeAnalytics(volume);
     return {
       format: "kiwoom",
       narrative,
       domestic: narrative.domesticIndices,
       overseas: narrative.overseasIndices,
       volume,
+      analytics,
     };
   }
 
@@ -290,20 +410,232 @@
     return items.sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999));
   }
 
+  const chartInstances = {};
+
+  function destroyCharts() {
+    Object.values(chartInstances).forEach((c) => c?.destroy?.());
+    Object.keys(chartInstances).forEach((k) => delete chartInstances[k]);
+  }
+
+  function chartColor(pct) {
+    if (pct === null || pct === 0) return "#94a3b8";
+    return pct > 0 ? "#ef4444" : "#3b82f6";
+  }
+
+  function computeVolumeAnalytics(volume) {
+    const stocks = volume.filter((v) => !/^KODEX|TIGER|RISE|HANARO|PLUS|SOL /i.test(v.name) && !/레버리지|인버스|선물|채권|CD금리|커버드콜/i.test(v.name));
+    const top10 = volume.slice(0, 10);
+    const market = { KOSPI: 0, KOSDAQ: 0, 기타: 0 };
+    const themeVolume = {};
+    let gainers = 0;
+    let losers = 0;
+    let totalVol = 0;
+    let pctSum = 0;
+    let pctCount = 0;
+
+    volume.forEach((v) => {
+      totalVol += v.volume ?? 0;
+      if ((v.pct ?? 0) > 0) gainers += 1;
+      else if ((v.pct ?? 0) < 0) losers += 1;
+      if (v.pct !== null) { pctSum += v.pct; pctCount += 1; }
+
+      if (/kospi/i.test(v.market)) market.KOSPI += 1;
+      else if (/kosdaq/i.test(v.market)) market.KOSDAQ += 1;
+      else market.기타 += 1;
+
+      const theme = (v.theme || "기타").split("/")[0].trim() || "기타";
+      themeVolume[theme] = (themeVolume[theme] || 0) + (v.volume ?? 0);
+    });
+
+    const topThemes = Object.entries(themeVolume)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+
+    const pctSorted = [...volume]
+      .filter((v) => v.pct !== null)
+      .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
+      .slice(0, 10);
+
+    return {
+      top10,
+      stocks,
+      market,
+      topThemes,
+      pctSorted,
+      gainers,
+      losers,
+      totalVol,
+      avgPct: pctCount ? pctSum / pctCount : null,
+      stockCount: stocks.length,
+      etfCount: volume.length - stocks.length,
+    };
+  }
+
+  function renderKpi(analytics, volume) {
+    const el = document.getElementById("kpi-grid");
+    if (!el) return;
+    const cards = [
+      { label: "상위 종목", value: `${volume.length}개` },
+      { label: "개별주", value: `${analytics.stockCount}개` },
+      { label: "ETF·ETN", value: `${analytics.etfCount}개` },
+      { label: "상승", value: `${analytics.gainers}개`, cls: "change-up" },
+      { label: "하락", value: `${analytics.losers}개`, cls: "change-down" },
+      { label: "평균 등락률", value: fmtPct(analytics.avgPct), cls: changeClass(analytics.avgPct) },
+      { label: "합산 거래대금", value: fmtVolumeMillion(analytics.totalVol) },
+      { label: "KOSPI 비중", value: `${analytics.market.KOSPI}종목` },
+    ];
+    el.innerHTML = cards.map((c) => `
+      <div class="kpi-card">
+        <div class="kpi-label">${escapeHtml(c.label)}</div>
+        <div class="kpi-value ${c.cls || ""}">${escapeHtml(c.value)}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderCharts(analytics) {
+    if (typeof Chart === "undefined") return;
+    destroyCharts();
+
+    const commonOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#94a3b8", font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(45,58,79,0.5)" } },
+        y: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(45,58,79,0.5)" } },
+      },
+    };
+
+    const volCtx = document.getElementById("chart-volume");
+    if (volCtx) {
+      chartInstances.volume = new Chart(volCtx, {
+        type: "bar",
+        data: {
+          labels: analytics.top10.map((v) => v.name.length > 8 ? `${v.name.slice(0, 8)}…` : v.name),
+          datasets: [{
+            label: "거래대금(백만)",
+            data: analytics.top10.map((v) => v.volume ?? 0),
+            backgroundColor: "rgba(245, 158, 11, 0.65)",
+          }],
+        },
+        options: { ...commonOpts, indexAxis: "y" },
+      });
+    }
+
+    const mktCtx = document.getElementById("chart-market");
+    if (mktCtx) {
+      chartInstances.market = new Chart(mktCtx, {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(analytics.market),
+          datasets: [{
+            data: Object.values(analytics.market),
+            backgroundColor: ["#f59e0b", "#3b82f6", "#64748b"],
+          }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { color: "#94a3b8" } } } },
+      });
+    }
+
+    const pctCtx = document.getElementById("chart-pct");
+    if (pctCtx) {
+      chartInstances.pct = new Chart(pctCtx, {
+        type: "bar",
+        data: {
+          labels: analytics.pctSorted.map((v) => v.name.length > 8 ? `${v.name.slice(0, 8)}…` : v.name),
+          datasets: [{
+            label: "등락률(%)",
+            data: analytics.pctSorted.map((v) => v.pct),
+            backgroundColor: analytics.pctSorted.map((v) => chartColor(v.pct)),
+          }],
+        },
+        options: commonOpts,
+      });
+    }
+
+    const themeCtx = document.getElementById("chart-theme");
+    if (themeCtx && analytics.topThemes.length) {
+      chartInstances.theme = new Chart(themeCtx, {
+        type: "bar",
+        data: {
+          labels: analytics.topThemes.map(([t]) => t.length > 10 ? `${t.slice(0, 10)}…` : t),
+          datasets: [{
+            label: "거래대금(백만)",
+            data: analytics.topThemes.map(([, v]) => v),
+            backgroundColor: "rgba(96, 165, 250, 0.55)",
+          }],
+        },
+        options: { ...commonOpts, indexAxis: "y" },
+      });
+    }
+  }
+
+  function renderSectors(el, sectors) {
+    if (!el || !sectors?.length) {
+      if (el) el.innerHTML = "";
+      return;
+    }
+    el.innerHTML = `
+      <h4 class="section-subtitle">해외 섹터별 동향</h4>
+      ${sectors.map((s) => `
+        <div class="sector-block">
+          <h4>${escapeHtml(s.title)}</h4>
+          <p>${escapeHtml(s.content || "")}</p>
+        </div>
+      `).join("")}
+    `;
+  }
+
+  function renderSegmentPanels(volume, analytics) {
+    const el = document.getElementById("segment-panels");
+    if (!el) return;
+
+    const kospi = volume.filter((v) => /kospi/i.test(v.market)).slice(0, 8);
+    const kosdaq = volume.filter((v) => /kosdaq/i.test(v.market)).slice(0, 8);
+    const stocks = analytics.stocks.slice(0, 8);
+
+    const renderMini = (title, items) => `
+      <div class="segment-card">
+        <h4>${escapeHtml(title)}</h4>
+        <table class="mini-table">
+          <thead><tr><th>종목</th><th class="text-right">등락률</th><th class="text-right">거래대금</th></tr></thead>
+          <tbody>${items.map((i) => `
+            <tr>
+              <td>${escapeHtml(i.name)}</td>
+              <td class="text-right ${changeClass(i.pct)}">${fmtPct(i.pct)}</td>
+              <td class="text-right">${fmtVolumeMillion(i.volume)}</td>
+            </tr>
+          `).join("")}</tbody>
+        </table>
+      </div>
+    `;
+
+    el.innerHTML = [
+      renderMini("개별주 거래대금 상위", stocks),
+      renderMini("KOSPI 상위", kospi),
+      renderMini("KOSDAQ 상위", kosdaq),
+    ].join("");
+  }
+
   function buildAnalysis(data, fileTime) {
     const { domestic, overseas, volume, narrative, format } = data;
     const insights = [];
 
     if (format === "kiwoom" && narrative) {
-      if (narrative.overseasComment) {
+      if (narrative.overseasSummary) insights.push(narrative.overseasSummary.slice(0, 150) + (narrative.overseasSummary.length > 150 ? "…" : ""));
+      else if (narrative.overseasComment) {
         insights.push(narrative.overseasComment.length > 120
           ? `${narrative.overseasComment.slice(0, 120)}…`
           : narrative.overseasComment);
       }
-      if (narrative.domesticComment) {
+      if (narrative.domesticSummary) insights.push(narrative.domesticSummary.slice(0, 150) + (narrative.domesticSummary.length > 150 ? "…" : ""));
+      else if (narrative.domesticComment) {
         insights.push(narrative.domesticComment.length > 120
           ? `${narrative.domesticComment.slice(0, 120)}…`
           : narrative.domesticComment);
+      }
+      if (narrative.sectors?.length) {
+        insights.push(`해외 섹터 모니터링: ${narrative.sectors.map((s) => s.title).join(", ")}`);
       }
     }
 
@@ -372,14 +704,20 @@
   function renderNarrative(el, narrative, type) {
     const isOverseas = type === "overseas";
     const title = isOverseas ? narrative.overseasTitle : narrative.domesticTitle;
-    const comment = isOverseas ? narrative.overseasComment : narrative.domesticComment;
-    const extra = isOverseas
-      ? [narrative.bigtech, narrative.fx].filter(Boolean)
-      : [];
+    const comment = isOverseas
+      ? (narrative.overseasSummary || narrative.overseasComment)
+      : (narrative.domesticSummary || narrative.domesticComment);
+    const indexText = isOverseas ? narrative.overseasIndexText : narrative.domesticIndexText;
 
     const parts = [];
     if (title) parts.push(`<div class="narrative-line"><strong>${escapeHtml(title)}</strong></div>`);
-    extra.forEach((line) => parts.push(`<div class="narrative-line">${escapeHtml(line)}</div>`));
+    if (indexText) parts.push(`<div class="narrative-line">${escapeHtml(indexText)}</div>`);
+
+    if (isOverseas) {
+      if (narrative.bigtech) parts.push(`<div class="narrative-line">${escapeHtml(narrative.bigtech)}</div>`);
+      if (narrative.fx) parts.push(`<div class="narrative-line">${escapeHtml(narrative.fx)}</div>`);
+    }
+
     if (comment) parts.push(`<div class="narrative-comment">${escapeHtml(comment)}</div>`);
 
     el.innerHTML = parts.length ? parts.join("") : '<p class="narrative-line">요약 정보가 없습니다.</p>';
@@ -414,6 +752,7 @@
             ${isKiwoom ? "<th>테마</th>" : ""}
             <th class="text-right">현재가</th>
             <th class="text-right">등락률</th>
+            ${isKiwoom ? "<th class=\"text-right\">D-1</th><th class=\"text-right\">D-2</th>" : ""}
             <th class="text-right">거래대금</th>
             ${isKiwoom ? "<th>뉴스 요약</th>" : ""}
           </tr>
@@ -427,6 +766,7 @@
             ${isKiwoom ? `<td>${escapeHtml(i.theme || "-")}</td>` : ""}
             <td class="text-right">${fmtNum(i.price, 0)}</td>
             <td class="text-right ${changeClass(i.pct)}">${fmtPct(i.pct)}</td>
+            ${isKiwoom ? `<td class="text-right ${changeClass(i.d1Pct)}">${fmtPct(i.d1Pct)}</td><td class="text-right ${changeClass(i.d2Pct)}">${fmtPct(i.d2Pct)}</td>` : ""}
             <td class="text-right">${isKiwoom ? fmtVolumeMillion(i.volume) : fmtNum(i.volume, 0)}</td>
             ${isKiwoom ? `<td class="news-cell">${escapeHtml(i.news || "-")}</td>` : ""}
           </tr>
@@ -449,6 +789,7 @@
         domestic: parsed.domestic,
         overseas: parsed.overseas,
         volume: parsed.volume,
+        analytics: parsed.analytics,
         fileTime,
         filename,
         analysis,
@@ -484,6 +825,10 @@
     document.getElementById("summary-text").textContent = data.analysis.summary;
     document.getElementById("insight-list").innerHTML = data.analysis.insights.map((t) => `<li>${escapeHtml(t)}</li>`).join("");
 
+    const analytics = data.analytics || computeVolumeAnalytics(data.volume || []);
+    renderKpi(analytics, data.volume || []);
+    renderCharts(analytics);
+
     if (data.format === "kiwoom" && data.narrative) {
       const ovsTitle = data.narrative.overseasTitle || "해외 증시 현황";
       const domTitle = data.narrative.domesticTitle || "국내 증시 현황";
@@ -491,15 +836,19 @@
       document.getElementById("domestic-title").textContent = domTitle.replace(/■\s*/, "").trim() || "국내 증시 현황";
       renderNarrative(document.getElementById("overseas-narrative"), data.narrative, "overseas");
       renderNarrative(document.getElementById("domestic-narrative"), data.narrative, "domestic");
+      renderSectors(document.getElementById("overseas-sectors"), data.narrative.sectors);
     } else {
       document.getElementById("overseas-title").textContent = "해외 증시 현황";
       document.getElementById("domestic-title").textContent = "국내 증시 현황";
       document.getElementById("overseas-narrative").innerHTML = "<p class='narrative-line'>별도 해외 시장 요약이 없습니다.</p>";
       document.getElementById("domestic-narrative").innerHTML = "<p class='narrative-line'>별도 국내 시장 요약이 없습니다.</p>";
+      const sectorsEl = document.getElementById("overseas-sectors");
+      if (sectorsEl) sectorsEl.innerHTML = "";
     }
 
     renderIndexCards(document.getElementById("overseas-cards"), data.overseas);
     renderIndexCards(document.getElementById("domestic-cards"), data.domestic);
+    renderSegmentPanels(data.volume || [], analytics);
 
     const volDesc = data.volume.length
       ? `총 ${data.volume.length}개 종목 · 거래대금 단위: ${data.format === "kiwoom" ? "백만원" : "파일 기준"}`

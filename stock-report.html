@@ -8,6 +8,7 @@
   <title>증시현황 보고서</title>
   <link rel="stylesheet" href="stock-report.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="stock-app">
@@ -88,7 +89,7 @@
     <section class="sample-panel panel">
       <h2>처음이신가요?</h2>
       <p>실제 형식의 샘플 엑셀을 내려받아 확인한 뒤 업로드해 보세요.</p>
-      <a href="stock_data/거래대금상위_2026_06_23_1503.xlsx" class="btn btn-primary" download>샘플 엑셀 다운로드</a>
+      <a href="stock_data/거래대금상위_2026_06_23_1627.xlsx" class="btn btn-primary" download>샘플 엑셀 다운로드</a>
     </section>
 
     <div id="loading" class="state-panel" hidden>
@@ -110,19 +111,37 @@
       <section class="panel">
         <h3>종합 요약</h3>
         <p class="summary-text" id="summary-text"></p>
+        <div class="kpi-grid" id="kpi-grid"></div>
         <ul class="insight-list" id="insight-list"></ul>
+      </section>
+
+      <section class="panel">
+        <h3>시각화 분석</h3>
+        <p class="section-desc">엑셀 거래대금·등락률·시장·테마 데이터 기반 차트</p>
+        <div class="chart-grid">
+          <div class="chart-card"><h4>거래대금 TOP 10</h4><canvas id="chart-volume"></canvas></div>
+          <div class="chart-card"><h4>시장 구성 (KOSPI / KOSDAQ)</h4><canvas id="chart-market"></canvas></div>
+          <div class="chart-card"><h4>등락률 TOP 10</h4><canvas id="chart-pct"></canvas></div>
+          <div class="chart-card"><h4>테마별 거래대금</h4><canvas id="chart-theme"></canvas></div>
+        </div>
       </section>
 
       <section class="panel narrative-panel">
         <h3 id="overseas-title">해외 증시 현황</h3>
         <div class="narrative-block" id="overseas-narrative"></div>
         <div class="index-cards" id="overseas-cards"></div>
+        <div id="overseas-sectors"></div>
       </section>
 
       <section class="panel narrative-panel">
         <h3 id="domestic-title">국내 증시 현황</h3>
         <div class="narrative-block" id="domestic-narrative"></div>
         <div class="index-cards" id="domestic-cards"></div>
+      </section>
+
+      <section class="panel">
+        <h3>시장·테마 세분화</h3>
+        <div class="segment-grid" id="segment-panels"></div>
       </section>
 
       <section class="panel">
