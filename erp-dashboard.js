@@ -17,6 +17,7 @@
   const kpiGrid = document.getElementById("kpi-grid");
   const dashPeriod = document.getElementById("dash-period");
   const dashMeta = document.getElementById("dash-meta");
+  const downloadPdfBtn = document.getElementById("download-pdf-btn");
 
   let charts = [];
   let currentAnalytics = null;
@@ -316,6 +317,22 @@
     if (!currentAnalytics) return;
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => renderCharts(currentAnalytics), 200);
+  });
+
+  downloadPdfBtn.addEventListener("click", async () => {
+    if (!currentAnalytics || !window.ErpReport) return;
+    const label = downloadPdfBtn.textContent;
+    downloadPdfBtn.disabled = true;
+    downloadPdfBtn.textContent = "PDF 생성 중…";
+    try {
+      await ErpReport.downloadPdf(currentAnalytics);
+    } catch (err) {
+      console.error("PDF download error:", err);
+      alert(err.message || "PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      downloadPdfBtn.disabled = false;
+      downloadPdfBtn.textContent = label;
+    }
   });
 
   init();

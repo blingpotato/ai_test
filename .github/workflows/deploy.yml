@@ -37,6 +37,7 @@ jobs:
             erp-dashboard.html
             erp-dashboard.css
             erp-dashboard.js
+            erp-report.js
             erp-upload.html
             erp-upload.css
             erp-upload.js

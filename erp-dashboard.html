@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="erp-common.css">
   <link rel="stylesheet" href="erp-dashboard.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <header class="erp-header">
@@ -43,7 +44,10 @@
           <h1>경영 대시보드</h1>
           <p class="dash-period" id="dash-period"></p>
         </div>
-        <span class="dash-meta" id="dash-meta"></span>
+        <div class="dash-actions">
+          <span class="dash-meta" id="dash-meta"></span>
+          <button type="button" class="btn btn-primary" id="download-pdf-btn">분석보고서 PDF</button>
+        </div>
       </header>
 
       <section class="kpi-grid" id="kpi-grid" aria-label="핵심 지표"></section>
@@ -131,6 +135,7 @@
   </footer>
 
   <script src="erp-data.js"></script>
+  <script src="erp-report.js"></script>
   <script src="erp-dashboard.js"></script>
 </body>
 </html>
