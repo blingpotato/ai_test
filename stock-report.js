@@ -562,24 +562,73 @@
   const liveMarketUpdated = document.getElementById("live-market-updated");
   const liveMarketRefresh = document.getElementById("live-market-refresh");
 
-  function renderLiveQuoteCards(el, items) {
+  function renderLiveQuoteCards(el, items, { compact = false } = {}) {
+    if (compact) el.classList.add("index-cards-compact");
+    else el.classList.remove("index-cards-compact");
+
     el.innerHTML = items.map((item) => {
       if (item.error) {
         return `
-          <div class="index-card index-card-error">
+          <div class="index-card index-card-error${compact ? " index-card-compact" : ""}">
             <div class="index-card-name">${escapeHtml(item.label || item.symbol)}</div>
             <div class="index-card-change change-flat">${escapeHtml(item.error)}</div>
           </div>
         `;
       }
 
-      const digits = item.currency === "KRW" ? 2 : 2;
+      const digits = item.decimals ?? (item.currency === "KRW" ? 2 : 2);
+      const compactClass = compact ? " index-card-compact" : "";
       return `
-        <div class="index-card">
+        <div class="index-card${compactClass}">
           <div class="index-card-name">${escapeHtml(item.label || item.name)}</div>
           <div class="index-card-price">${fmtNum(item.price, digits)}</div>
           <div class="index-card-change ${changeClass(item.change)}">${fmtChange(item.change)} (${fmtPct(item.pct)})</div>
         </div>
+      `;
+    }).join("");
+  }
+
+  function renderLiveSummary(summary) {
+    const el = document.getElementById("live-market-summary");
+    if (!summary) {
+      el.innerHTML = '<p class="live-summary-line">요약 정보를 생성하지 못했습니다.</p>';
+      return;
+    }
+
+    const parts = [];
+    if (summary.overseasLine) {
+      parts.push(`<p class="live-summary-line"><strong>해외</strong> ${escapeHtml(summary.overseasLine)}</p>`);
+    }
+    if (summary.domesticLine) {
+      parts.push(`<p class="live-summary-line"><strong>국내</strong> ${escapeHtml(summary.domesticLine)}</p>`);
+    }
+
+    const highlights = (summary.highlights || [])
+      .map((t) => `<li>${escapeHtml(t)}</li>`)
+      .join("");
+
+    el.innerHTML = `${parts.join("")}${highlights ? `<ul class="live-summary-highlights">${highlights}</ul>` : ""}`;
+  }
+
+  function renderLiveNews(items) {
+    const el = document.getElementById("live-market-news");
+    if (!items?.length) {
+      el.innerHTML = '<li class="live-news-item"><span class="live-news-meta">표시할 뉴스가 없습니다.</span></li>';
+      return;
+    }
+
+    el.innerHTML = items.map((item) => {
+      const date = item.publishedAt
+        ? new Date(item.publishedAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+        : "";
+      const meta = [item.publisher, date].filter(Boolean).join(" · ");
+      const title = escapeHtml(item.title || "제목 없음");
+      const url = escapeHtml(item.url || "#");
+      return `
+        <li class="live-news-item">
+          <a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>
+          ${meta ? `<div class="live-news-meta">${escapeHtml(meta)}</div>` : ""}
+        </li>
       `;
     }).join("");
   }
@@ -599,10 +648,19 @@
         throw new Error(data.error || `시세 API 오류 (${res.status})`);
       }
 
+      renderLiveSummary(data.summary);
       renderLiveQuoteCards(document.getElementById("live-overseas-cards"), data.overseas || []);
+      renderLiveQuoteCards(document.getElementById("live-bigtech-cards"), data.bigTech || [], { compact: true });
+      renderLiveQuoteCards(document.getElementById("live-commodity-cards"), data.commodities || [], { compact: true });
       renderLiveQuoteCards(document.getElementById("live-domestic-cards"), data.domestic || []);
+      renderLiveNews(data.news || []);
 
-      const times = [...(data.overseas || []), ...(data.domestic || [])]
+      const times = [
+        ...(data.overseas || []),
+        ...(data.domestic || []),
+        ...(data.bigTech || []),
+        ...(data.commodities || []),
+      ]
         .map((q) => q.marketTime)
         .filter(Boolean)
         .map((t) => new Date(t).getTime())

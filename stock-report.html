@@ -23,7 +23,7 @@
       <div class="live-market-head">
         <div>
           <h2>실시간 증시 현황</h2>
-          <p class="live-market-desc">엑셀 업로드와 별개로 Yahoo Finance 기준 최신 지수를 표시합니다.</p>
+          <p class="live-market-desc">엑셀 업로드와 별개로 Yahoo Finance 기준 지수·빅테크·환율·원자재·뉴스를 표시합니다. 상승 빨강 · 하락 파랑.</p>
         </div>
         <div class="live-market-actions">
           <span class="live-market-updated" id="live-market-updated">불러오는 중…</span>
@@ -39,12 +39,33 @@
 
       <div id="live-market-content" hidden>
         <div class="live-market-group">
-          <h3>해외 증시</h3>
+          <h3>주요 증시 요약</h3>
+          <div class="live-summary-block" id="live-market-summary"></div>
+        </div>
+
+        <div class="live-market-group">
+          <h3>해외 주요 지수</h3>
           <div class="index-cards" id="live-overseas-cards"></div>
         </div>
+
+        <div class="live-market-group">
+          <h3>빅테크 · 반도체</h3>
+          <div class="index-cards index-cards-compact" id="live-bigtech-cards"></div>
+        </div>
+
+        <div class="live-market-group">
+          <h3>환율 · 유가 · 금 · 은</h3>
+          <div class="index-cards index-cards-compact" id="live-commodity-cards"></div>
+        </div>
+
         <div class="live-market-group">
           <h3>국내 증시</h3>
           <div class="index-cards" id="live-domestic-cards"></div>
+        </div>
+
+        <div class="live-market-group">
+          <h3>주요 뉴스</h3>
+          <ul class="live-news-list" id="live-market-news"></ul>
         </div>
       </div>
     </section>
